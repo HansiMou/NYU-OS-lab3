@@ -8,13 +8,15 @@
 #ifndef RANDOM_H_
 #define RANDOM_H_
 
-// deal with the random file
+#include <cstdio>
 
-class random {
+// deal with the random file
+class Random {
 public:
 	bool done;
-	FILE* rfile;
-	random(char*);
+	static FILE* rfile;
+	Random();
+	Random(char*);
 	int getRandNum();
 };
 

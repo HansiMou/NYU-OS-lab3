@@ -6,18 +6,19 @@
  */
 
 #include "random.h"
-FILE* random::rfile;
-random::random(char* path) {
-	rfile = fopen(path, r);
+FILE* Random::rfile;
+Random::Random() {
+    rfile = NULL;
+    done = false;
+}
+Random::Random(char* path) {
+	rfile = fopen(path, "r");
 	done = false;
-	if (rfile == NULL) {
-		fprint(stderr, "random file not found.\n");
-	}
 	char buffer[100];
 	fgets(buffer, 100, rfile);
 }
 
-int random::getRandNum() {
+int Random::getRandNum() {
 	char buffer[100];
 	int res;
 	fgets(buffer, 100, rfile);

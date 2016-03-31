@@ -17,23 +17,35 @@
 
 #include "random.h"
 #include "vmm.h"
-#include "algorithm.h"
+#include "pager.h"
 
-class prepare {
+class Prepare {
 public:
+	// instruction file
 	FILE* ifile;
+
+	// length of frame table
 	int numOfFrame;
-	// output options
+
+	// print options
 	bool O, P, F, S, p, f, a;
-	Algorithm* alg;
 
-	prepare();
-	~prepare();
-	bool parseCommand(char**, int);
+	// type of replacement algorithm being used
+	Pager* pager;
 
+	Prepare();
+	~Prepare();
+
+	// if all the events have been put out
+	bool done();
+
+	// parse the input
+	bool parseCommand(char*[], int);
+
+	// get next instruction
 	void nextIns(unsigned int&, unsigned int&);
 
+	// get VMM
 	VMM getVMM();
 };
-
-#endif /* PREPARE_H_ */
+#endif

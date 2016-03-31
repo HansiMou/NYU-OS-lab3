@@ -1,5 +1,5 @@
 /*
- * prepare.cpp
+ * Prepare.cpp
  *
  *  Created on: Mar 28, 2016
  *      Author: hans
@@ -7,17 +7,19 @@
 
 #include "prepare.h"
 
-prepare::prepare() {
-	O = P = F = S = p = f = a = numOfFrame = false;
-	alg = new Alg_LRU();
+Prepare::Prepare() {
+	ifile = NULL;
+	numOfFrame = 32;
+	O = P = F = S = p = f = a = false;
+	pager = new Pager_LRU();
 }
 
-prepare::~prepare() {
+Prepare::~Prepare() {
 	if (ifile != NULL)
 		fclose(ifile);
 }
 
-bool prepare::parseCommand(char* argv[], int argc) {
+bool Prepare::parseCommand(char* argv[], int argc) {
 	if (argc < 3) {
 		fprintf(stderr, "Wrong number of parameters.\n");
 		return false;
@@ -28,39 +30,35 @@ bool prepare::parseCommand(char* argv[], int argc) {
 	int optLen;
 	while ((c = getopt(argc, argv, "a:o:f:")) != -1) {
 		switch (c) {
-		// set number of frame
-		case 'f':
-			sscanf(optarg, "%d", &numOfFrame);
-			break;
-			// set algorithm
+		// set algorithm
 		case 'a':
 			switch (optarg[0]) {
-			case 'N':
-				algo = new Alg_NRU();
-				break;
-			case 'C':
-				algo = new Alg_Clock_V();
-				break;
-			case 'A':
-				algo = new Alg_Aging_V();
-				break;
 			case 'l':
-				algo = new Alg_LRU();
+				pager = new Pager_LRU();
 				break;
 			case 'r':
-				algo = new Alg_Random();
+				pager = new Pager_Random();
 				break;
 			case 'f':
-				algo = new Alg_FIFO();
+				pager = new Pager_FIFO();
 				break;
 			case 's':
-				algo = new Alg_SecondChance();
+				pager = new Pager_SecondChance();
 				break;
 			case 'c':
-				algo = new Alg_Clock_P();
+				pager = new Pager_ClockP();
 				break;
 			case 'a':
-				algo = new Alg_Aging_P();
+				pager = new Pager_AgingP();
+				break;
+			case 'N':
+				pager = new Pager_NRU();
+				break;
+			case 'X':
+				pager = new Pager_ClockV();
+				break;
+			case 'Y':
+				pager = new Pager_AgingV();
 				break;
 			default:
 				break;
@@ -95,6 +93,14 @@ bool prepare::parseCommand(char* argv[], int argc) {
 				}
 			}
 			break;
+			// set number of frame
+		case 'f':
+			sscanf(optarg, "%d", &numOfFrame);
+			if (numOfFrame > 64) {
+				fprintf(stderr, "Too many frames, not supported.\n");
+				return false;
+			}
+			break;
 		}
 	}
 
@@ -104,32 +110,35 @@ bool prepare::parseCommand(char* argv[], int argc) {
 		return false;
 	}
 
-	algo->setRandom(Random(argv[argc - 1]));
-	algo->setNumOfFrames(numOfFrames);
+	pager->random = Random(argv[argc - 1]);
+	pager->numOfFrame = numOfFrame;
 
 	return true;
 }
 
 // get next instruction
-void prepare::nextIns(unsigned int& ins, unsigned int& pagenum) {
+void Prepare::nextIns(unsigned int& ins, unsigned int& pagenum) {
 	char buffer[10000];
 	fgets(buffer, 10000, ifile);
 
-	while (!feof(ifile)){
+	while (!feof(ifile)) {
 		if (buffer[0] == '#')
 			fgets(buffer, 10000, ifile);
-		else{
+		else {
 			sscanf(buffer, "%d%d", &ins, &pagenum);
 			return;
 		}
 	}
 
-	if (feof(ifile)){
+	if (feof(ifile)) {
 		ins = pagenum = -1;
 		return;
 	}
 }
 
-VMM prepare::getVMM() {
-	return VMM(algo, numOfFrames, O, P, F, S, p, f, a);
+bool Prepare::done() {
+	return feof(ifile);
+}
+VMM Prepare::getVMM() {
+	return VMM(numOfFrame, O, P, F, S, p, f, a, pager);
 }
